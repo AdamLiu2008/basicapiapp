@@ -1,0 +1,27 @@
+var pg = require('pg')
+
+// Attempt to use native client
+try {
+  pg = pg['native']
+} catch (e) {
+}
+
+module.exports = function(conn) {
+  return {
+    query: query.bind(this, conn)
+  }
+}
+
+function query(conn, q, cb) {
+  // Acquire a client from the connection pool
+  pg.connect(conn, function(err, client, done) {
+    if (err) return cb(err)
+
+    client.query(q, function() {
+      // Release the Postgres client back to the pool
+      done()
+
+      cb.apply(this, arguments)
+    })
+  })
+}
